@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js",
-    "inngest-dev" : "npx inngest-cli@latest dev"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "inngest-dev": "npx inngest-cli@latest dev"
   },
   "keywords": [],
   "author": "",
@@ -21,9 +22,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
     "inngest": "^3.39.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.3",
+    "winston": "^3.11.0"
   }
 }

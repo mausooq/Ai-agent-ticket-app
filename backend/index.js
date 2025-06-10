@@ -1,39 +1,92 @@
-dotenv.config();
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import mongoose from 'mongoose';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import { serve } from 'inngest/express';
-import userRoute from './routes/user.js';
-import ticketRoute from './routes/ticket.js';
+import mongoose from 'mongoose';
 import { inngest } from './inngest/client.js';
 import { onUserSignup } from './inngest/functions/on-signup.js';
 import { onTicketCreate } from './inngest/functions/on-ticket-create.js';
+import ticketRoute from './routes/ticket.js';
+import userRoute from './routes/user.js';
 
-const PORT = process.env.PORT || 5000;
+// Load environment variables
+dotenv.config();
+
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 5000;
 
-app.use('/api/auth', userRoute)
-app.use('/api/tickets', ticketRoute)
-
-app.use('/api/inngest', serve({
-    client:inngest,
-    functions :[onUserSignup, onTicketCreate ]
+// Security Middleware
+app.use(helmet()); // Adds various HTTP headers for security
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true
 }));
 
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-}).then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-}
-).catch((err) => {
-    console.error('MongoDB connection error:', err);
-}
-);
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Body parser
+app.use(express.json({ limit: '10kb' })); // Limit body size
+
+// Routes
+app.use('/api/auth', userRoute);
+app.use('/api/tickets', ticketRoute);
+app.use('/api/inngest', serve({
+    client: inngest,
+    functions: [onUserSignup, onTicketCreate]
+}));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        status: 'error',
+        message: process.env.NODE_ENV === 'production' 
+            ? 'Internal server error' 
+            : err.message
+    });
+});
+
+// MongoDB connection with retry logic
+const connectDB = async (retries = 5) => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log('Connected to MongoDB');
+        
+        // Start server only after DB connection
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+            console.log(`Environment: ${process.env.NODE_ENV}`);
+        });
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        if (retries > 0) {
+            console.log(`Retrying connection... (${retries} attempts left)`);
+            setTimeout(() => connectDB(retries - 1), 5000);
+        } else {
+            console.error('Failed to connect to MongoDB after multiple attempts');
+            process.exit(1);
+        }
+    }
+};
+
+connectDB();
 
 
 
