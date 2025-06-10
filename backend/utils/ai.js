@@ -2,7 +2,7 @@ import { createAgent, gemini } from "@inngest/agent-kit";
 
 const analyzeTicket = async (ticket) => {
   try {
-    console.log("Starting AI analysis for ticket:", ticket.title);
+    // console.log("Starting AI analysis for ticket:", ticket.title);
     
     const supportAgent = createAgent({
       model: gemini({
@@ -30,10 +30,10 @@ const analyzeTicket = async (ticket) => {
     - helpfulNotes: Technical explanation and resources
     - relatedSkills: Array of relevant technical skills`;
 
-    console.log("Sending prompt to AI:", prompt);
+    // console.log("Sending prompt to AI:", prompt);
     
     const response = await supportAgent.run(prompt);
-    console.log("Raw AI Response:", response);
+    // console.log("Raw AI Response:", response);
 
     // Get the raw response text from the first output
     const rawResponse = response.output[0]?.content || '';
@@ -44,9 +44,9 @@ const analyzeTicket = async (ticket) => {
     if (jsonMatch) {
       try {
         const jsonStr = jsonMatch[1].trim();
-        console.log("Extracted JSON string:", jsonStr);
+        // console.log("Extracted JSON string:", jsonStr);
         const parsedResponse = JSON.parse(jsonStr);
-        console.log("Successfully parsed JSON response:", parsedResponse);
+        // console.log("Successfully parsed JSON response:", parsedResponse);
         return parsedResponse;
       } catch (e) {
         console.log("Failed to parse extracted JSON:", e.message);
@@ -63,7 +63,7 @@ const analyzeTicket = async (ticket) => {
     }
 
     // If all parsing attempts fail, return a default response
-    console.log("All parsing attempts failed, returning default response");
+    // console.log("All parsing attempts failed, returning default response");
     return {
       summary: "Failed to analyze ticket",
       priority: "medium",

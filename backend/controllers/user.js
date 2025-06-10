@@ -21,7 +21,8 @@ export const signup = async (req,res) => {
 
        const token = jwt.sign( { _id :user._id , role: user.role }, process.env.JWT_SECRET,{ expiresIn: '1h' } )
 
-        return res.json(user , token);
+        // Send both user and token in the response
+        return res.json({ user, token });
     } catch(err){
         console.error("Error during signup:", err.message);
         res.status(500).json({ error: 'Internal server error' });
@@ -73,7 +74,7 @@ export const logout = async (req,res) => {
 }
 
 export const updateUser = async (req, res) => {
-   const {skills = [] , email ,role} = req.body;
+   const {skills, email, role} = req.body;
     try {
         if (req.user?.role !== 'admin') {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -83,12 +84,26 @@ export const updateUser = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const updatedData = {
-            skills: skills.length ? skills : user.skills,
-            email: email || user.email,
-            role: role || user.role
-        };
-        return res.json({ message: 'User updated successfully', user });
+        // Update user fields
+        if (skills) {
+            // Handle both string and array inputs
+            user.skills = Array.isArray(skills) 
+                ? skills 
+                : skills.split(',').map(skill => skill.trim());
+        }
+        if (role) user.role = role;
+
+        // Save the updated user
+        await user.save();
+
+        return res.json({ 
+            message: 'User updated successfully', 
+            updatedData: {
+                skills: user.skills,
+                email: user.email,
+                role: user.role
+            }
+        });
     } catch (err) {
         console.error("Error updating user:", err.message);
         res.status(500).json({ error: 'Internal server error' });

@@ -88,7 +88,7 @@ export const getTicket = async (req,res) => {
             .populate("assignedTo", ["email","_id"]);
         } else {
             ticket = await Ticket.findOne({createdBy : user._id, _id : req.params.id})
-            .select("title description status createdAt");
+            .populate("assignedTo", ["email","_id"]);
         }   
         if(!ticket){
             return res.status(404).json({ message: "ticket not found" });
@@ -99,3 +99,25 @@ export const getTicket = async (req,res) => {
         return res.status(500).json({ message: "Internal server Error" });
     }
 }
+
+export const deleteTicket = async (req, res) => {
+    try {
+        const user = req.user;
+        const ticket = await Ticket.findOne({ _id: req.params.id });
+        
+        if (!ticket) {
+            return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        // Only allow deletion if user is admin or the ticket creator
+        if (user.role !== "admin" && ticket.createdBy.toString() !== user._id.toString()) {
+            return res.status(403).json({ message: "Not authorized to delete this ticket" });
+        }
+
+        await Ticket.findByIdAndDelete(req.params.id);
+        return res.status(200).json({ message: "Ticket deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting ticket:", err.message);
+        return res.status(500).json({ message: "Internal server Error" });
+    }
+};
