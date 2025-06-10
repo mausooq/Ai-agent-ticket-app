@@ -24,19 +24,29 @@ app.use(helmet()); // Adds various HTTP headers for security
 const allowedOrigins = [
     'http://localhost:5173',  // Local development
     'http://localhost:80',    // Local production
-    process.env.FRONTEND_URL, // Production frontend URL
+    'https://ai-agent-ticket-app.vercel.app',  // Vercel deployment
+    'https://www.ai-agent-ticket-app.vercel.app',  // Vercel deployment with www
+    process.env.FRONTEND_URL, // Additional frontend URL if needed
     process.env.FRONTEND_URL_ALT // Alternative frontend URL if needed
 ].filter(Boolean); // Remove any undefined values
 
 app.use(cors({
     origin: function(origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+            console.log('Request with no origin - allowing');
+            return callback(null, true);
+        }
+        
+        console.log('Checking CORS for origin:', origin);
+        console.log('Allowed origins:', allowedOrigins);
         
         if (allowedOrigins.indexOf(origin) === -1) {
+            console.log('Blocked by CORS:', origin);
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
             return callback(new Error(msg), false);
         }
+        console.log('Origin allowed:', origin);
         return callback(null, true);
     },
     credentials: true,
@@ -82,8 +92,6 @@ app.use((err, req, res, next) => {
 const connectDB = async (retries = 5) => {
     try {
         await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
         });
