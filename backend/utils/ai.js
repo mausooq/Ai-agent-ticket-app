@@ -37,7 +37,7 @@ const analyzeTicket = async (ticket) => {
 
     // Get the raw response text from the first output
     const rawResponse = response.output[0]?.content || '';
-    console.log("Raw Response Text:", rawResponse);
+    // console.log("Raw Response Text:", rawResponse);
 
     // Extract JSON from markdown code blocks
     const jsonMatch = rawResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -56,7 +56,7 @@ const analyzeTicket = async (ticket) => {
     // If no code blocks found, try direct parsing
     try {
       const parsedResponse = JSON.parse(rawResponse);
-      console.log("Successfully parsed direct JSON response:", parsedResponse);
+      // console.log("Successfully parsed direct JSON response:", parsedResponse);
       return parsedResponse;
     } catch (e) {
       console.log("Direct parse failed:", e.message);

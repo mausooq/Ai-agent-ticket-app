@@ -20,16 +20,28 @@ const PORT = process.env.PORT || 5000;
 // Security Middleware
 app.use(helmet());
 
+// Trust proxy configuration
+app.set('trust proxy', 1);
+
 // CORS Configuration
 const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:80',
+    'https://ai-agent-ticket-app.vercel.app',
+    'https://www.ai-agent-ticket-app.vercel.app',
     process.env.FRONTEND_URL,
     process.env.FRONTEND_URL_ALT
 ].filter(Boolean);
 
+// console.log(allowedOrigins)
 app.use(cors({
     origin: function(origin, callback) {
         if (!origin) return callback(null, true);
+        
+        // Log for debugging
+        // console.log('Request origin:', origin);
+        // console.log('Allowed origins:', allowedOrigins);
+        
         if (allowedOrigins.indexOf(origin) === -1) {
             return callback(new Error('CORS policy violation'), false);
         }

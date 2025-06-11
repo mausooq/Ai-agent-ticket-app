@@ -7,6 +7,12 @@ import User from '../models/user.js';
 export const signup = async (req,res) => {
     const {email ,password , skills =[]} = req.body;
     try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
             email,
@@ -14,10 +20,16 @@ export const signup = async (req,res) => {
             skills
         });
 
-        await inngest.send({
-            name: 'user/signup',
-            data: { email }
-        })
+        // Try to send Inngest event, but don't fail if it doesn't work
+        try {
+            await inngest.send({
+                name: 'user/signup',
+                data: { email }
+            });
+        } catch (inngestError) {
+            console.error("Inngest event failed:", inngestError);
+            // Continue with signup even if Inngest fails
+        }
 
        const token = jwt.sign( { _id :user._id , role: user.role }, process.env.JWT_SECRET,{ expiresIn: '1h' } )
 
@@ -25,7 +37,7 @@ export const signup = async (req,res) => {
         return res.json({ user, token });
     } catch(err){
         console.error("Error during signup:", err.message);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Failed to create account. Please try again.' });
     }
 }
 
@@ -34,12 +46,12 @@ export const login = async (req,res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ message: 'No account found with this email' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid password' });
+            return res.status(401).json({ message: 'Incorrect password' });
         }
 
         const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -48,7 +60,7 @@ export const login = async (req,res) => {
     }
     catch (err) {
         console.error("Error during login:", err.message);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ message: 'Login failed. Please try again.' });
     }
 }
 

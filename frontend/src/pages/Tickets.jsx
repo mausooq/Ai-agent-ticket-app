@@ -6,6 +6,7 @@ export default function Tickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -33,6 +34,7 @@ export default function Tickets() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/tickets`, {
         method: "POST",
@@ -49,10 +51,10 @@ export default function Tickets() {
         setForm({ title: "", description: "" });
         fetchTickets(); // Refresh list
       } else {
-        alert(data.message || "Ticket creation failed");
+        setError(data.message || "Ticket creation failed");
       }
     } catch (err) {
-      alert("Error creating ticket");
+      setError("Error creating ticket");
       console.error(err);
     } finally {
       setLoading(false);
@@ -65,6 +67,7 @@ export default function Tickets() {
     }
 
     setDeleteLoading(ticketId);
+    setError("");
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/tickets/${ticketId}`, {
         method: "DELETE",
@@ -78,10 +81,10 @@ export default function Tickets() {
       if (res.ok) {
         fetchTickets(); // Refresh list
       } else {
-        alert(data.message || "Failed to delete ticket");
+        setError(data.message || "Failed to delete ticket");
       }
     } catch (err) {
-      alert("Error deleting ticket");
+      setError("Error deleting ticket");
       console.error(err);
     } finally {
       setDeleteLoading(null);
@@ -116,6 +119,12 @@ export default function Tickets() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
       {/* Create Ticket Form */}
       <div className="card bg-gray-800 shadow-xl p-6 rounded-lg mb-8">
         <h2 className="text-2xl font-bold text-white mb-6">Create New Ticket</h2>

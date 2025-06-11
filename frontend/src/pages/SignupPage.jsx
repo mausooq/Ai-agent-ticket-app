@@ -1,21 +1,23 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SignupPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError(""); // Clear error when user types
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/auth/signup`, {
         method: "POST",
@@ -31,10 +33,10 @@ export default function SignupPage() {
         localStorage.setItem("userRole", data.user.role);
         navigate("/login");
       } else {
-        alert(data.message || "Signup failed");
+        setError(data.message || "Signup failed");
       }
     } catch (err) {
-      alert("Something went wrong");
+      setError("Something went wrong. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -44,7 +46,13 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Create an Account </h1>
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Create an Account</h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>

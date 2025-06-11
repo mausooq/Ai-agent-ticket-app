@@ -1,21 +1,23 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError(""); // Clear error when user types
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/auth/login`, {
         method: "POST",
@@ -29,10 +31,10 @@ export default function LoginPage() {
         localStorage.setItem("userRole", data.user.role);
         navigate("/");
       } else {
-        alert(data.message || "Login failed");
+        setError(data.message || "Login failed");
       }
     } catch (err) {
-      alert("Something went wrong");
+      setError("Something went wrong. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -43,6 +45,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Welcome Back</h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -89,7 +97,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-4">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <Link to="/signup" className="text-primary hover:underline">
             Register
           </Link>
